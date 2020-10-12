@@ -30,6 +30,10 @@ subprojects {
         testImplementation('org.springframework.boot:spring-boot-starter-test') {
             exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
         }
+
+//        implementation 'io.jaegertracing:jaeger-client:1.4.0'
+        implementation 'io.jaegertracing:jaeger-client:0.35.5'
+//        implementation 'io.jaegertracing:jaeger-client:0.32.0'
     }
 
     test {
