@@ -1,1 +1,3 @@
 rootProject.name = 'gs-opentracing'
+
+include("app-simple")
