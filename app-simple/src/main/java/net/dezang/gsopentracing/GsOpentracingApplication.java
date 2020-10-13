@@ -1,7 +1,10 @@
 package net.dezang.gsopentracing;
 
+import com.google.common.collect.ImmutableMap;
 import io.jaegertracing.Configuration.ReporterConfiguration;
 import io.jaegertracing.Configuration.SamplerConfiguration;
+import io.jaegertracing.internal.JaegerTracer;
+import io.jaegertracing.internal.samplers.ConstSampler;
 import io.opentracing.Span;
 import io.opentracing.Tracer;
 import lombok.RequiredArgsConstructor;
@@ -21,14 +24,21 @@ public class GsOpentracingApplication implements ApplicationRunner {
         SpringApplication.run(GsOpentracingApplication.class, args);
     }
 
-    private void sayHello(String helloTo) {
-        Span span = tracer.buildSpan("say-hello").start();
-        span.setTag("hello-to", helloTo);
-
-        String helloStr = String.format("Hello, %s!", helloTo);
-        System.out.println(helloStr);
-
-        span.finish();
+    @Configuration
+    static class Config {
+        @Bean
+        Tracer tracer() {
+            SamplerConfiguration samplerConfig = SamplerConfiguration.fromEnv().withType(ConstSampler.TYPE).withParam(1);
+            io.jaegertracing.Configuration.SenderConfiguration senderConfig = io.jaegertracing.Configuration.SenderConfiguration.fromEnv()
+                    .withAgentHost("localhost")
+                    .withAgentPort(6831);
+            ReporterConfiguration reporterConfig = ReporterConfiguration.fromEnv().withLogSpans(true).withSender(senderConfig);
+            io.jaegertracing.Configuration config = new io.jaegertracing.Configuration("app-simple")
+                    .withSampler(samplerConfig)
+                    .withReporter(reporterConfig);
+            JaegerTracer tracer = config.getTracer();
+            return tracer;
+        }
     }
 
     @Override
@@ -39,18 +49,45 @@ public class GsOpentracingApplication implements ApplicationRunner {
 
         String helloTo = args.getNonOptionArgs().get(0);
         sayHello(helloTo);
+
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
-    @Configuration
-    static class Config {
-        @Bean
-        Tracer tracer() {
-            SamplerConfiguration samplerConfig = SamplerConfiguration.fromEnv().withType("const").withParam(1);
-            ReporterConfiguration reporterConfig = ReporterConfiguration.fromEnv().withLogSpans(true);
-            io.jaegertracing.Configuration config = new io.jaegertracing.Configuration("app-simple")
-                    .withSampler(samplerConfig)
-                    .withReporter(reporterConfig);
-            return config.getTracer();
+    private void sayHello(String helloTo) {
+        Span span = tracer.buildSpan("say-hello").start();
+        span.setTag("hello-to", helloTo);
+
+        String helloStr = formatString(helloTo, span);
+        printHello(helloStr, span);
+
+        span.finish();
+    }
+
+    private String formatString(String helloTo, Span rootSpan) {
+        Span span = tracer.buildSpan("formatString")
+                .asChildOf(rootSpan)
+                .start();
+        try {
+            span.log(ImmutableMap.of("event", "string-format", "value", helloTo));
+            return String.format("Hello, %s!", helloTo);
+        } finally {
+            span.finish();
+        }
+    }
+
+    private void printHello(String helloStr, Span rootSpan) {
+        Span span = tracer.buildSpan("printHello")
+                .asChildOf(rootSpan)
+                .start();
+        try {
+            span.log(ImmutableMap.of("event", "println"));
+            System.out.println(helloStr);
+        } finally {
+            span.finish();
         }
     }
 }
