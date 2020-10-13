@@ -86,11 +86,41 @@ public class ConsumerApp {
             }
         }
         private void work() {
-            Span span = tracer.buildSpan("some-work").start();
+            Span span = tracer.buildSpan("consumer-work").start();
             try (Scope ignored = tracer.scopeManager().activate(span)) {
                 try {
                     System.out.println("working!");
-                    Thread.sleep(1000);
+                    Thread.sleep(200);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            } finally {
+                span.finish();
+            }
+        }
+
+        @KafkaListener(topics = "test.tracing.stream")
+        public void consumeFromStream(ConsumerRecord<String, String> record) {
+            log.info("received message={}", record.value());
+            Headers headers = record.headers();
+            SpanContext spanContext = TracingKafkaUtils.extractSpanContext(headers, tracer);
+            Span span = tracer.buildSpan("consumed")
+                    .asChildOf(spanContext)
+                    .withTag(Tags.SPAN_KIND.getKey(), Tags.SPAN_KIND_CLIENT)
+                    .start();
+            try (Scope ignored = tracer.scopeManager().activate(span)) {
+                saveToDb();
+            } finally {
+                span.finish();
+            }
+        }
+
+        private void saveToDb() {
+            Span span = tracer.buildSpan("saveToDb").start();
+            try (Scope ignored = tracer.scopeManager().activate(span)) {
+                try {
+                    System.out.println("saved!");
+                    Thread.sleep(250);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
