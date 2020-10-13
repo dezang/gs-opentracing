@@ -3,8 +3,8 @@ package net.dezang.gsopentracing;
 import com.google.common.collect.ImmutableMap;
 import io.jaegertracing.Configuration.ReporterConfiguration;
 import io.jaegertracing.Configuration.SamplerConfiguration;
-import io.jaegertracing.internal.JaegerTracer;
 import io.jaegertracing.internal.samplers.ConstSampler;
+import io.opentracing.Scope;
 import io.opentracing.Span;
 import io.opentracing.Tracer;
 import lombok.RequiredArgsConstructor;
@@ -36,8 +36,7 @@ public class GsOpentracingApplication implements ApplicationRunner {
             io.jaegertracing.Configuration config = new io.jaegertracing.Configuration("app-simple")
                     .withSampler(samplerConfig)
                     .withReporter(reporterConfig);
-            JaegerTracer tracer = config.getTracer();
-            return tracer;
+            return config.getTracer();
         }
     }
 
@@ -59,19 +58,19 @@ public class GsOpentracingApplication implements ApplicationRunner {
 
     private void sayHello(String helloTo) {
         Span span = tracer.buildSpan("say-hello").start();
-        span.setTag("hello-to", helloTo);
+        try (Scope ignored = tracer.scopeManager().activate(span)) {
+            span.setTag("hello-to", helloTo);
 
-        String helloStr = formatString(helloTo, span);
-        printHello(helloStr, span);
-
-        span.finish();
+            String helloStr = formatString(helloTo);
+            printHello(helloStr, span);
+        } finally {
+            span.finish();
+        }
     }
 
-    private String formatString(String helloTo, Span rootSpan) {
-        Span span = tracer.buildSpan("formatString")
-                .asChildOf(rootSpan)
-                .start();
-        try {
+    private String formatString(String helloTo) {
+        Span span = tracer.buildSpan("formatString").start();
+        try (Scope ignored = tracer.scopeManager().activate(span)) {
             span.log(ImmutableMap.of("event", "string-format", "value", helloTo));
             return String.format("Hello, %s!", helloTo);
         } finally {
@@ -83,7 +82,7 @@ public class GsOpentracingApplication implements ApplicationRunner {
         Span span = tracer.buildSpan("printHello")
                 .asChildOf(rootSpan)
                 .start();
-        try {
+        try (Scope ignored = tracer.scopeManager().activate(span)) {
             span.log(ImmutableMap.of("event", "println"));
             System.out.println(helloStr);
         } finally {
