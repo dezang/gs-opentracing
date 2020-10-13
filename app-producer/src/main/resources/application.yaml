@@ -1,0 +1,5 @@
+spring:
+  application:
+    name: app-producer
+  kafka:
+    bootstrap-servers: ${BOOTSTRAP_SERVERS:localhost:9092}
