@@ -1,0 +1,7 @@
+spring:
+  application:
+    name: app-stream
+  kafka:
+    bootstrap-servers: ${BOOTSTRAP_SERVERS:localhost:9092}
+    streams:
+      application-id: ${spring.application.name}

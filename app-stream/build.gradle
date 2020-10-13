@@ -1,0 +1,7 @@
+dependencies {
+    implementation "org.apache.kafka:kafka-streams"
+    implementation "org.springframework.kafka:spring-kafka"
+//    implementation "io.opentracing.contrib:opentracing-kafka-client:0.1.13"
+//    implementation "io.opentracing.contrib:opentracing-kafka-spring:0.1.13"
+    implementation "io.opentracing.contrib:opentracing-kafka-streams:0.1.13"
+}
