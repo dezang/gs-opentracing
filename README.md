@@ -1,5 +1,6 @@
 # Getting Started OpenTracing
-
+- https://opentracing.io
+- https://opentracing.io/registry
 - https://github.com/yurishkuro/opentracing-tutorial
 - https://mvnrepository.com/artifact/io.jaegertracing/jaeger-client
 - https://mvnrepository.com/artifact/com.google.guava/guava
@@ -14,16 +15,19 @@
 ## Kafka
 ```shell script
 git clone git@github.com:confluentinc/cp-all-in-one.git
-cd cp-all-in-one
-cd cp-all-in-one
+cd cp-all-in-one/cp-all-in-one
 docker-compose up -d
 ```
 
-- http://localhost:9021/
+```
+http://localhost:9021
+```
 
 ## jaeger
 ```shell script
 docker run -d -p6831:6831/udp -p16686:16686 jaegertracing/all-in-one:latest
 ```
 
-- http://localhost:16686
+```
+http://localhost:16686
+```

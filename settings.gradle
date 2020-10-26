@@ -2,5 +2,6 @@ rootProject.name = 'gs-opentracing'
 
 include("app-simple")
 include("app-producer")
+include("app-rest-producer")
 include("app-consumer")
 include("app-stream")
