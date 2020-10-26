@@ -1,6 +1,8 @@
 package net.dezang.gsopentracing;
 
 import io.jaegertracing.internal.samplers.ConstSampler;
+import io.opentracing.Scope;
+import io.opentracing.Span;
 import io.opentracing.Tracer;
 import io.opentracing.contrib.kafka.spring.TracingProducerFactory;
 import lombok.RequiredArgsConstructor;
@@ -63,13 +65,28 @@ public class RestProducingApp {
     @RequiredArgsConstructor
     @Log4j2
     static class SimpleRestProducer {
+        private final Tracer tracer;
         private final KafkaTemplate<String, String> kafkaTemplate;
 
         @GetMapping("send")
         public ResponseEntity<?> produce(@RequestParam String message) {
             log.info(message);
+            work();
             kafkaTemplate.send("test.tracing", message + " by rest producer");
             return ResponseEntity.ok(message);
+        }
+
+        private void work() {
+            Span span = tracer.buildSpan("work-in-rest-producer").start();
+            try (Scope ignored = tracer.scopeManager().activate(span)) {
+                span.setTag("sleep-time", 100);
+                Thread.sleep(100);
+                log.info("working...");
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } finally {
+                span.finish();
+            }
         }
     }
 }

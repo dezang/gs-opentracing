@@ -31,3 +31,8 @@ docker run -d -p6831:6831/udp -p16686:16686 jaegertracing/all-in-one:latest
 ```
 http://localhost:16686
 ```
+
+
+## Reference
+- https://blog.naver.com/alice_k106/221832024817
+- https://jeqo.github.io/posts/2017-09-28-kafka-opentracing/
