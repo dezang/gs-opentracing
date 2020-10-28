@@ -32,6 +32,42 @@ docker run -d -p6831:6831/udp -p16686:16686 jaegertracing/all-in-one:latest
 http://localhost:16686
 ```
 
+# Story
+- app-simple
+  - tracer()
+  - traceId, spanId, parentSpanId
+  - `asChildOf()`,  `try (Scope ignored = tracer.scopeManager().activate(span))`
+  - run jaeger
+  - run app
+- kafka services
+  - ![kafka topology](./images/topology.jpg)
+- app-consumer
+  - run kafka
+  - `new TracingConsumerFactory<>()`
+  - `TracingKafkaConsumer.poll()`
+  - `TracingKafkaUtils.buildAndFinishChildSpan`
+- app-producer
+  - `new TracingProducerFactory<>()`
+  - `TracingKafkaProducer.send()`
+  - `TracingKafkaUtils.buildAndInjectSpan`
+  - `TracingCallback.onCompletion()`
+  - open http://localhost:16686
+- app-rest-producer
+  - `io.opentracing.contrib:opentracing-spring-web-starter:4.1.0`
+  - `ServerTracingAutoConfiguration`
+  - `new TracingFilter().doFilter()`
+  - `new TracingHandlerInterceptor()` skip
+  - curl http://localhost:8080/send?message=hello
+  - open http://localhost:16686
+- app-stream
+  - `TracingKafkaClientSupplier`
+  - `TransformerWithTracing<V, R> implements Transformer
+- etc
+  - https://opentracing.io/registry or https://github.com/opentracing-contrib
+  - https://github.com/yurishkuro/opentracing-tutorial
+- more
+  - https://www.jaegertracing.io/docs/1.7/sampling/#client-sampling-configuration
+  - https://www.jaegertracing.io/docs/1.19/client-libraries/
 
 ## Reference
 - https://blog.naver.com/alice_k106/221832024817

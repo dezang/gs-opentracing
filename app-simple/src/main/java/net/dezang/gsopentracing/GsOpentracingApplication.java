@@ -82,7 +82,7 @@ public class GsOpentracingApplication implements ApplicationRunner {
         Span span = tracer.buildSpan("printHello")
                 .asChildOf(rootSpan)
                 .start();
-        try (Scope ignored = tracer.scopeManager().activate(span)) {
+        try {
             span.log(ImmutableMap.of("event", "println"));
             System.out.println(helloStr);
         } finally {

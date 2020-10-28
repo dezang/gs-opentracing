@@ -69,21 +69,19 @@ public class RestProducingApp {
         private final KafkaTemplate<String, String> kafkaTemplate;
 
         @GetMapping("send")
-        public ResponseEntity<?> produce(@RequestParam String message) {
+        public ResponseEntity<?> send(@RequestParam String message) throws InterruptedException {
             log.info(message);
             work();
             kafkaTemplate.send("test.tracing", message + " by rest producer");
             return ResponseEntity.ok(message);
         }
 
-        private void work() {
+        private void work() throws InterruptedException {
             Span span = tracer.buildSpan("work-in-rest-producer").start();
             try (Scope ignored = tracer.scopeManager().activate(span)) {
                 span.setTag("sleep-time", 100);
                 Thread.sleep(100);
                 log.info("working...");
-            } catch (InterruptedException e) {
-                e.printStackTrace();
             } finally {
                 span.finish();
             }

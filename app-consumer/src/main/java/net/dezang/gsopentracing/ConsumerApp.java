@@ -69,20 +69,23 @@ public class ConsumerApp {
     @RequiredArgsConstructor
     static class SimpleConsumer {
         private final Tracer tracer;
+        private static final boolean IS_WORK = false;
 
         @KafkaListener(topics = "test.tracing")
         public void consume(ConsumerRecord<String, String> record) {
             log.info("received message={}", record.value());
-            Headers headers = record.headers();
-            SpanContext spanContext = TracingKafkaUtils.extractSpanContext(headers, tracer);
-            Span span = tracer.buildSpan("consumed")
-                    .asChildOf(spanContext)
-                    .withTag(Tags.SPAN_KIND.getKey(), Tags.SPAN_KIND_CLIENT)
-                    .start();
-            try (Scope ignored = tracer.scopeManager().activate(span)) {
-                work();
-            } finally {
-                span.finish();
+            if (IS_WORK) {
+                Headers headers = record.headers();
+                SpanContext spanContext = TracingKafkaUtils.extractSpanContext(headers, tracer);
+                Span span = tracer.buildSpan("consumed")
+                        .asChildOf(spanContext)
+                        .withTag(Tags.SPAN_KIND.getKey(), Tags.SPAN_KIND_CLIENT)
+                        .start();
+                try (Scope ignored = tracer.scopeManager().activate(span)) {
+                    work();
+                } finally {
+                    span.finish();
+                }
             }
         }
         private void work() {
