@@ -33,6 +33,7 @@ import org.springframework.stereotype.Component;
 import javax.annotation.PostConstruct;
 import java.util.Properties;
 import java.util.function.Function;
+import java.util.function.UnaryOperator;
 
 @SpringBootApplication
 public class StreamApp {
@@ -99,26 +100,9 @@ public class StreamApp {
             streams.start();
             Runtime.getRuntime().addShutdownHook(new Thread(streams::close));
         }
-
-        private String work(String message) {
-            Span span = tracer.buildSpan("stream-work").start();
-            try (Scope ignored = tracer.scopeManager().activate(span)) {
-                try {
-                    log.info("working!");
-                    Thread.sleep(1000);
-                    return message + " streamed!";
-                } catch (InterruptedException e) {
-                    log.warn("Interrupted!", e);
-                    Thread.currentThread().interrupt();
-                    return message + " exception!";
-                }
-            } finally {
-                span.finish();
-            }
-        }
     }
 
-    static class WorkFunction implements Function<String, String> {
+    static class WorkFunction implements UnaryOperator<String> {
 
         @Override
         public String apply(String s) {
@@ -142,7 +126,7 @@ public class StreamApp {
     }
 
     @Log4j2
-    static class TransformerWithTracing<V, VR> implements Transformer<String, V, KeyValue<String, VR>> {
+    static class TransformerWithTracing<V, R> implements Transformer<String, V, KeyValue<String, R>> {
         private ProcessorContext context;
         final Function valueAction;
         final String operatorName;
@@ -158,13 +142,13 @@ public class StreamApp {
         }
 
         @Override
-        public KeyValue<String, VR> transform(String key, V value) {
+        public KeyValue<String, R> transform(String key, V value) {
             Tracer tracer = GlobalTracer.get();
             Headers headers = context.headers();
             SpanContext spanContext = TracingKafkaUtils.extractSpanContext(headers, tracer);
             Span span = tracer.buildSpan(operatorName).asChildOf(spanContext).start();
             try (Scope ignored = tracer.scopeManager().activate(span)) {
-                return KeyValue.pair(key, (VR) valueAction.apply(value));
+                return KeyValue.pair(key, (R) valueAction.apply(value));
             } finally {
                 span.finish();
             }
