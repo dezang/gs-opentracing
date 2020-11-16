@@ -17,6 +17,10 @@
 git clone git@github.com:confluentinc/cp-all-in-one.git
 cd cp-all-in-one/cp-all-in-one
 docker-compose up -d
+
+# or
+
+docker run -e ADV_HOST=127.0.0.1 -e EULA="http://dl.lenses.io/d/?id=34c9df40-6180-49b2-b211-e4b02394506b" --rm -p 3030:3030 -p 9092:9092 lensesio/box
 ```
 
 ```

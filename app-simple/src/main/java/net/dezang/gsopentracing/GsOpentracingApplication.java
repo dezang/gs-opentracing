@@ -6,7 +6,10 @@ import io.jaegertracing.Configuration.SamplerConfiguration;
 import io.jaegertracing.internal.samplers.ConstSampler;
 import io.opentracing.Scope;
 import io.opentracing.Span;
+import io.opentracing.SpanContext;
 import io.opentracing.Tracer;
+import io.opentracing.propagation.Format;
+import io.opentracing.propagation.TextMapAdapter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
@@ -14,6 +17,8 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
+import java.util.Map;
 
 @RequiredArgsConstructor
 @SpringBootApplication
@@ -48,6 +53,7 @@ public class GsOpentracingApplication implements ApplicationRunner {
 
         String helloTo = args.getNonOptionArgs().get(0);
         sayHello(helloTo);
+        extractTest();
 
         try {
             Thread.sleep(1000);
@@ -88,5 +94,17 @@ public class GsOpentracingApplication implements ApplicationRunner {
         } finally {
             span.finish();
         }
+    }
+
+    private void extractTest() {
+        String inputSpanContextString = "eff5a956cab8a747:7cf853758807f43f:eff5a956cab8a747:1";
+        Tracer.SpanBuilder spanBuilder = tracer.buildSpan("extract-test-from-string");
+        SpanContext spanContext = tracer.extract(
+                Format.Builtin.TEXT_MAP,
+                new TextMapAdapter(Map.of("uber-trace-id", inputSpanContextString)));
+
+        Span span = spanBuilder.asChildOf(spanContext).start();
+        System.out.println(span);
+        span.finish();
     }
 }
